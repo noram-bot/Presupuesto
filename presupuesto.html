@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoja de Cálculo Básica</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Agregar Chart.js -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            display: flex;
+            gap: 30px; /* Espacio entre los recuadros, tabla y el gráfico */
+        }
+        .recuadros {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            margin-top: 0;
+            align-items: flex-start;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .recuadro {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin-bottom: 15px; /* Mayor separación entre los recuadros */
+        }
+        .recuadro label {
+            margin-right: 10px;
+            width: 100px; /* Alinear los labels */
+        }
+        .recuadro input {
+            width: 120px;
+            padding: 5px;
+            text-align: center;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 500px; /* Ajustar tamaño de la tabla */
+        }
+        td, th {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        input {
+            width: 100%;
+            text-align: center;
+            padding: 5px;
+        }
+        .tabla-estadistica {
+            margin-left: 50px; /* Separar la tabla estadística */
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px; /* Definir un tamaño fijo */
+            width: 100%;
+        }
+        .tabla-estadistica h2 {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        #estadisticas {
+            margin-top: 15px;
+        }
+        #grafico {
+            margin-top: 20px;
+            max-width: 500px; /* Ajustar tamaño del gráfico */
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Columna de recuadros -->
+        <div class="recuadros">
+            <div class="recuadro">
+                <label for="ingreso">Ingreso:</label>
+                <input type="number" id="ingreso" value="0" oninput="calcularTotal()" />
+            </div>
+            <div class="recuadro">
+                <label for="gastoTotal">Gasto Total:</label>
+                <input type="number" id="gastoTotal" value="0" readonly />
+            </div>
+            <div class="recuadro">
+                <label for="ahorro">Ahorro:</label>
+                <input type="number" id="ahorro" value="0" readonly />
+            </div>
+        </div>
+
+        <!-- Tabla de costos -->
+        <div>
+            <h1>Hoja de Cálculo</h1>
+            
+            <table id="tabla">
+                <tr>
+                    <th>Gasto</th>
+                    <th>Costo</th>
+                </tr>
+                <!-- Filas para ingresar valores, con "Gasto" pre-cargado -->
+                <tr>
+                    <td><input type="text" value="TRANSPORTE" disabled /></td>
+                    <td><input type="number" id="costo1" value="0" oninput="actualizarGastoTotal()" onkeydown="moverFoco(event, this)" /></td>
+                </tr>
+                <tr>
+                    <td><input type="text" value="COMIDA" disabled /></td>
+                    <td><input type="number" id="costo2" value="0" oninput="actualizarGastoTotal()" onkeydown="moverFoco(event, this)" /></td>
+                </tr>
+                <tr>
+                    <td><input type="text" value="AGUA" disabled /></td>
+                    <td><input type="number" id="costo3" value="0" oninput="actualizarGastoTotal()" onkeydown="moverFoco(event, this)" /></td>
+                </tr>
+                <tr>
+                    <td><input type="text" value="ALMUERZO" disabled /></td>
+                    <td><input type="number" id="costo4" value="0" oninput="actualizarGastoTotal()" onkeydown="moverFoco(event, this)" /></td>
+                </tr>
+                <tr>
+                    <td><input type="text" value="COPIAS" disabled /></td>
+                    <td><input type="number" id="costo5" value="0" oninput="actualizarGastoTotal()" onkeydown="moverFoco(event, this)" /></td>
+                </tr>
+                <tr>
+                    <td><input type="text" value="ÚTILES" disabled /></td>
+                    <td><input type="number" id="costo6" value="0" oninput="actualizarGastoTotal()" onkeydown="moverFoco(event, this)" /></td>
+                </tr>
+                <tr>
+                    <td><input type="text" value="GAST. IMPROV" disabled /></td>
+                    <td><input type="number" id="costo7" value="0" oninput="actualizarGastoTotal()" onkeydown="moverFoco(event, this)" /></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Gráfico de Pastel -->
+        <div id="grafico">
+            <h2>Gráfico de Distribución de Gastos</h2>
+            <canvas id="graficoPastel"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Inicializamos el gráfico con valores por defecto
+        let ctx = document.getElementById('graficoPastel').getContext('2d');
+        let graficoPastel = new Chart(ctx, {
+            type: 'pie', // Tipo de gráfico pastel
+            data: {
+                labels: ['TRANSPORTE', 'COMIDA', 'AGUA', 'ALMUERZO', 'COPIAS', 'ÚTILES', 'GAST. IMPROV'],
+                datasets: [{
+                    label: 'Distribución de Gastos',
+                    data: [0, 0, 0, 0, 0, 0, 0], // Datos iniciales, todos en 0
+                    backgroundColor: [
+                        '#FF9999', '#66B3FF', '#99FF99', '#FFCC99', '#FF6666', '#66FF66', '#FF6666'
+                    ], // Colores para cada categoría
+                    borderColor: ['#FFF', '#FFF', '#FFF', '#FFF', '#FFF', '#FFF', '#FFF'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return tooltipItem.label + ': S/ ' + tooltipItem.raw.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Función para actualizar el gráfico de pastel y el gasto total
+        function actualizarGastoTotal() {
+            let gastoTotal = 0;
+            let gastos = [];
+
+            // Obtener los valores de los costos y actualizar la suma
+            for (let i = 1; i <= 7; i++) {
+                let costo = parseFloat(document.getElementById("costo" + i).value) || 0;
+                gastos.push(costo);
+                gastoTotal += costo;
+            }
+
+            // Actualizar el cuadro de Gasto Total con S/
+            document.getElementById("gastoTotal").value = "S/ " + gastoTotal.toFixed(2);
+            calcularTotal();  // Calcular Ahorro después de actualizar el Gasto Total
+
+            // Actualizar el gráfico de pastel
+            graficoPastel.data.datasets[0].data = gastos;
+            graficoPastel.update(); // Redibujar el gráfico
+        }
+
+        function calcularTotal() {
+            // Calcular el total de los gastos y el ahorro
+            let ingreso = parseFloat(document.getElementById("ingreso").value) || 0;
+            let gastoTotal = parseFloat(document.getElementById("gastoTotal").value.replace('S/ ', '')) || 0;
+
+            let ahorro = ingreso - gastoTotal;
+
+            // Mostrar los resultados en los recuadros con S/
+            document.getElementById("ahorro").value = "S/ " + ahorro.toFixed(2);
+        }
+
+        // Función para mover el foco (salto de celda) al siguiente campo cuando se presiona Enter
+        function moverFoco(event, elemento) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                let siguiente = elemento.closest('td').nextElementSibling?.querySelector('input');
+                if (siguiente) {
+                    siguiente.focus();
+                } else {
+                    let siguienteFila = elemento.closest('tr').nextElementSibling;
+                    if (siguienteFila) {
+                        let siguienteInput = siguienteFila.querySelector('input');
+                        if (siguienteInput) {
+                            siguienteInput.focus();
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+</body>
+</html>
